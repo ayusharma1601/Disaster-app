@@ -44,8 +44,14 @@ app = FastAPI(
 app.add_middleware(SecurityHeadersMiddleware)
 
 @app.post("/api/security/reset-limits", include_in_schema=False)
-def reset_rate_limits(request: Request):
-    """Internal test helper to reset rate limiter history between automated test suites."""
+def reset_rate_limits(request: Request, authorization: Optional[str] = Header(None)):
+    """
+    Internal test helper to reset rate limiter history between automated test suites.
+    Protected in production deployments to prevent abuse.
+    """
+    is_prod = os.environ.get("ENVIRONMENT", "development").lower() == "production"
+    if is_prod:
+        get_authenticated_operator(authorization)
     client_ip = request.client.host if request.client else "127.0.0.1"
     login_rate_limiter.reset_ip(client_ip)
     incident_rate_limiter.reset_ip(client_ip)
@@ -60,13 +66,16 @@ app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), na
 def seed_initial_data():
     db = SessionLocal()
     try:
-        # 1. Operators
+        # 1. Operators (Credentials configurable via environment variables in production)
+        default_admin_pwd = os.environ.get("DEFAULT_ADMIN_PASSWORD", "admin123")
+        default_operator_pwd = os.environ.get("DEFAULT_OPERATOR_PASSWORD", "operator123")
+
         admin = db.query(models.User).filter(models.User.login_identifier == "admin").first()
         if not admin:
             db.add(models.User(
                 display_name="District Disaster Officer (Dhemaji HQ)",
                 login_identifier="admin",
-                password_hash=hash_password("admin123"),
+                password_hash=hash_password(default_admin_pwd),
                 role="admin"
             ))
         operator = db.query(models.User).filter(models.User.login_identifier == "operator").first()
@@ -74,7 +83,7 @@ def seed_initial_data():
             db.add(models.User(
                 display_name="SDRF Field Coordinator",
                 login_identifier="operator",
-                password_hash=hash_password("operator123"),
+                password_hash=hash_password(default_operator_pwd),
                 role="responder"
             ))
 
@@ -326,8 +335,14 @@ class ScenarioRequest(BaseModel):
     scenario: str  # "live", "normal", "watch", "emergency"
 
 @app.post("/api/telemetry/scenario")
-def set_telemetry_scenario(req: ScenarioRequest):
-    """Switch simulated hydrology scenario between live, normal, watch, and emergency."""
+def set_telemetry_scenario(req: ScenarioRequest, authorization: Optional[str] = Header(None)):
+    """
+    Switch simulated hydrology scenario between live, normal, watch, and emergency.
+    In production deployments, switching test scenarios requires operator authentication.
+    """
+    is_prod = os.environ.get("ENVIRONMENT", "development").lower() == "production"
+    if is_prod:
+        get_authenticated_operator(authorization)
     global ACTIVE_SCENARIO
     clean_scenario = req.scenario.lower().strip()
     if clean_scenario not in ["live", "normal", "watch", "emergency"]:
@@ -359,15 +374,15 @@ def get_current_telemetry():
                 "live_rain_mm": live_precip
             }
 
-            # Build telemetry observations with live weather combined with baseline gauges
+            # Build telemetry observations with live weather combined with baseline gauges (explicitly flagged)
             observations = [
-                {"station_name": "Dhemaji District HQ (Civil Station)", "station_type": "Rainfall (Live Met)", "district": "Dhemaji", "latitude": 27.4833, "longitude": 94.5833, "variable": "rainfall_24h", "value": live_precip, "unit": "mm", "observed_at": ts, "river_name": None, "warning_level": None, "danger_level": None},
-                {"station_name": "Jonai Sub-Division Station", "station_type": "Rainfall (Live Met)", "district": "Dhemaji", "latitude": 27.8333, "longitude": 95.1667, "variable": "rainfall_24h", "value": round(live_precip * 0.9, 1), "unit": "mm", "observed_at": ts, "river_name": None, "warning_level": None, "danger_level": None},
-                {"station_name": "Silapathar Revenue Circle", "station_type": "Rainfall (Live Met)", "district": "Dhemaji", "latitude": 27.5950, "longitude": 94.7250, "variable": "rainfall_24h", "value": round(live_precip * 1.1, 1), "unit": "mm", "observed_at": ts, "river_name": None, "warning_level": None, "danger_level": None},
-                {"station_name": "Gogamukh Block Office", "station_type": "Rainfall (Live Met)", "district": "Dhemaji", "latitude": 27.4200, "longitude": 94.4000, "variable": "rainfall_24h", "value": round(live_precip * 0.8, 1), "unit": "mm", "observed_at": ts, "river_name": None, "warning_level": None, "danger_level": None},
-                {"station_name": "Jiabhalali-Subansiri Confluence", "station_type": "River Gauge", "district": "Dhemaji", "latitude": 27.3500, "longitude": 94.2500, "variable": "water_level", "value": 81.40, "unit": "m", "observed_at": ts, "river_name": "Subansiri River", "warning_level": 85.00, "danger_level": 86.00},
-                {"station_name": "Gai River Gauge Site", "station_type": "River Gauge", "district": "Dhemaji", "latitude": 27.5200, "longitude": 94.6200, "variable": "water_level", "value": 98.60, "unit": "m", "observed_at": ts, "river_name": "Gai River", "warning_level": 102.50, "danger_level": 103.50},
-                {"station_name": "Jiabhoroli River Outpost", "station_type": "River Gauge", "district": "Dhemaji", "latitude": 27.4500, "longitude": 94.5100, "variable": "water_level", "value": 87.20, "unit": "m", "observed_at": ts, "river_name": "Jiabhoroli / Local Tributary", "warning_level": 90.50, "danger_level": 91.50}
+                {"station_name": "Dhemaji District HQ (Civil Station)", "station_type": "Rainfall (Live Met)", "district": "Dhemaji", "latitude": 27.4833, "longitude": 94.5833, "variable": "rainfall_24h", "value": live_precip, "unit": "mm", "observed_at": ts, "river_name": None, "warning_level": None, "danger_level": None, "source_type": "LIVE_GROUND_TRUTH"},
+                {"station_name": "Jonai Sub-Division Station", "station_type": "Rainfall (Simulated Multiplier)", "district": "Dhemaji", "latitude": 27.8333, "longitude": 95.1667, "variable": "rainfall_24h", "value": round(live_precip * 0.9, 1), "unit": "mm", "observed_at": ts, "river_name": None, "warning_level": None, "danger_level": None, "source_type": "SIMULATED"},
+                {"station_name": "Silapathar Revenue Circle", "station_type": "Rainfall (Simulated Multiplier)", "district": "Dhemaji", "latitude": 27.5950, "longitude": 94.7250, "variable": "rainfall_24h", "value": round(live_precip * 1.1, 1), "unit": "mm", "observed_at": ts, "river_name": None, "warning_level": None, "danger_level": None, "source_type": "SIMULATED"},
+                {"station_name": "Gogamukh Block Office", "station_type": "Rainfall (Simulated Multiplier)", "district": "Dhemaji", "latitude": 27.4200, "longitude": 94.4000, "variable": "rainfall_24h", "value": round(live_precip * 0.8, 1), "unit": "mm", "observed_at": ts, "river_name": None, "warning_level": None, "danger_level": None, "source_type": "SIMULATED"},
+                {"station_name": "Jiabhalali-Subansiri Confluence", "station_type": "River Gauge (Sample Baseline)", "district": "Dhemaji", "latitude": 27.3500, "longitude": 94.2500, "variable": "water_level", "value": 81.40, "unit": "m", "observed_at": ts, "river_name": "Subansiri River", "warning_level": 85.00, "danger_level": 86.00, "source_type": "SAMPLE_BASELINE"},
+                {"station_name": "Gai River Gauge Site", "station_type": "River Gauge (Sample Baseline)", "district": "Dhemaji", "latitude": 27.5200, "longitude": 94.6200, "variable": "water_level", "value": 98.60, "unit": "m", "observed_at": ts, "river_name": "Gai River", "warning_level": 102.50, "danger_level": 103.50, "source_type": "SAMPLE_BASELINE"},
+                {"station_name": "Jiabhoroli River Outpost", "station_type": "River Gauge (Sample Baseline)", "district": "Dhemaji", "latitude": 27.4500, "longitude": 94.5100, "variable": "water_level", "value": 87.20, "unit": "m", "observed_at": ts, "river_name": "Jiabhoroli / Local Tributary", "warning_level": 90.50, "danger_level": 91.50, "source_type": "SAMPLE_BASELINE"}
             ]
         else:
             # Fallback to local baseline if internet is disconnected (100% resilient)

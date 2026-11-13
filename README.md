@@ -20,62 +20,68 @@ The platform integrates real-time meteorological observations with edge-computed
 ## Key Capabilities
 
 ### 1. Multi-Tier Telemetry & Risk Assessment Engine
-- **Algorithmic Evaluation:** Implements deterministic, multi-factor risk scoring incorporating 24-hour cumulative precipitation, river gauge flood danger marks, and terrain susceptibility multipliers.
-- **Calibrated Operational Modes:**
-  - `🌐 Live Real-Time`: Ingests active meteorological ground truth for Dhemaji directly via Open-Meteo APIs, dynamically adjusting flood risk indices.
-  - `🟢 Normal Baseline`: Low-risk safe state (score 0.0), silent ambient monitoring.
-  - `🟡 Monsoon Watch`: Moderate-risk watch state with procedural, multi-stage thunderbolt audio synthesis (lightning snap and deep rolling reverberation) without false siren triggers.
-  - `🔴 Embankment Breach`: Critical emergency state triggering dual-oscillator piercing evacuation sirens, interactive evacuation modals, and fast-path tactical map switching.
+- **Rule-Based Risk Assessment:** Implements deterministic, explainable multi-factor risk scoring incorporating 24-hour cumulative precipitation, river gauge warning/danger marks, and basin susceptibility multipliers.
+- **Operational Data Modes:**
+  - `🌐 Live Hybrid`: Ingests active meteorological ground truth for Dhemaji HQ directly via Open-Meteo APIs, combined with simulated rainfall multipliers for surrounding circles and baseline river gauges.
+  - `🟢 Normal Baseline`: Low-risk safe state (score 0.0), ambient monitoring with sample data.
+  - `🟡 Monsoon Watch`: Moderate-risk watch state with procedural, multi-stage thunderbolt audio synthesis without false siren triggers.
+  - `🔴 Embankment Breach`: Emergency state triggering dual-oscillator evacuation sirens, interactive warning modals, and fast-path tactical map switching.
 - **Stale Data Guarding:** Observations older than the statutory 12-hour freshness window are automatically flagged as `STALE DATA / DATA UNAVAILABLE` to prevent false confidence during communication blackouts.
 
 ### 2. Dual-Viewport GIS Visualization
-- **3D WebGL Earth Globe:** Built on Three.js with realistic atmospheric scattering, elevation bumps, directional sunlight simulation, coordinate-accurate targeting, and smooth orbital flight transitions.
+- **3D WebGL Earth Globe:** Built on Three.js with atmospheric scattering, elevation contours, directional sunlight simulation, coordinate targeting, and orbital flight transitions.
 - **Tactical Flood Grid Map:** High-resolution Leaflet map displaying:
-  - CWC river gauge stations with live flood-stage status.
-  - IMD rainfall measurement stations.
-  - Digitized flood inundation hazard polygons (Subansiri Corridor, Gai River Flash Flood Spillway, Jiadhal Fan).
-  - High-visibility vector tactical pins with radar pulse animation, draggable repositioning, and double-click / context-menu instant deletion.
+  - CWC river gauge stations with flood-stage markers (sample historical telemetry).
+  - IMD rainfall measurement stations (live Open-Meteo weather + simulated stations).
+  - Hazard polygons for vulnerable corridors (Subansiri Corridor, Gai River Flash Flood Spillway, Jiadhal Fan).
+  - Interactive tactical pins with radar pulse animation, draggable repositioning, and deletion.
 
-### 3. Incident Management, AI Triage & Zero-PII Victim Privacy
-- **AI Triage & Operational Assessment:** On-device NLP semantic model (`services/ai_triage.py`) dynamically analyzes emergency SOS descriptions, assigning a continuous Threat Score (0.00 to 1.00), calibrated urgency, and recommending targeted resource dispatch (Rescue Boats, Medical Units, Relief Camps, SDRF Squads).
+### 3. Incident Management, NLP Triage & Victim Privacy
+- **NLP Incident Triage:** On-device lexical NLP classifier (`services/ai_triage.py`) analyzes incoming SOS descriptions, calculating a threat score (0.00 to 1.00), urgency tier, and recommending matching response resources (Rescue Boats, Medical Units, Relief Camps, SDRF Squads).
 - **Statutory Workflow State Machine:** Incidents enter strictly as `UNVERIFIED` and require verified operator authentication to progress (`UNDER REVIEW` $\to$ `VERIFIED` $\to$ `ASSIGNED` $\to$ `IN PROGRESS` $\to$ `RESOLVED` $\to$ `CLOSED`).
-- **Privacy Sanitization:** Cryptographically and programmatically scrubs confidential reporter contact details, phone numbers, and identifying data from public endpoints.
-- **Immutable Audit Trail:** System actions, resource allocations, and operator transitions are recorded in an append-only audit ledger with SHA-256 integrity hash verification.
+- **Privacy Sanitization:** Programmatically scrubs confidential reporter contact details and phone numbers from public endpoints.
+- **Audit Logging:** System actions, resource allocations, and operator transitions are recorded in an append-only database audit log table for accountability.
 
-### 4. Machine Learning Hydrological Flood Crest Predictor
-- **Dynamic Telemetry & Forecast Ingestion:** Aggregates live station rainfall and river gauges with IMD 48-hour projected precipitation forecasts.
-- **Calibrated Statistical Modeling:** Implements continuous logistic regression against multi-year ASDMA flood analogues (2020–2024 Dhemaji records), providing dynamic crest lead-time forecasting, inundation surge margins, and early warning advisories.
+### 4. Experimental Rainfall-Runoff Prediction
+- **Dynamic Telemetry & Sample Forecast Ingestion:** Aggregates active station rainfall, baseline river gauges, and sample 48-hour IMD rainfall projections.
+- **Empirical Logistic Curve Modeling:** Uses a parameterised logistic regression curve combined with nearest-neighbour matching against historical ASDMA monsoon flood cases (2020–2024 Dhemaji records) to estimate flood crest lead time, surge margin, and evacuation advisories.
 
-### 5. Zero-Internet / Offline-First Resilience
-- **Decoupled Architecture:** Runs entirely on-device or on a local battery-powered node (e.g., Raspberry Pi or local field laptop) binding to `0.0.0.0:8000` over local Wi-Fi.
-- **Browser-Native Audio Synthesis:** All siren warbles and thunderbolt sounds are synthesized on the fly via the browser Web Audio API—requiring zero external audio downloads or CDN assets.
-- **P2P Mesh Integration:** In-browser BitChat mesh protocol using BroadcastChannel, localStorage synchronization, and Web Bluetooth (BLE) peripheral pairing for message relay during complete ISP blackouts.
+### 5. Experimental Offline Communication Interface
+- **Decoupled Architecture:** Runs locally on-device or on a local battery-powered node (e.g., Raspberry Pi or field laptop) binding to `0.0.0.0:8000` over local Wi-Fi.
+- **Browser-Native Audio Synthesis:** Siren warbles and thunder sounds are synthesized on the fly via the browser Web Audio API—requiring zero external audio assets.
+- **Experimental Offline Mesh Interface:** Prototype offline communication using `BroadcastChannel` and `localStorage` synchronization across browser tabs/windows on the same node, with Web Bluetooth (BLE) peripheral pairing demonstration UI for radio packet bridge evaluation.
 
 ---
 
-## AI Architecture & Intelligence Layer
+## Prototype Intelligence & Data Architecture
 
-The platform integrates two decoupled, local-first intelligence models engineered to operate with zero external API dependencies—ensuring complete reliability during cellular blackout conditions:
+The platform combines explainable rules, lexical NLP, and empirical statistical formulas engineered to operate locally without external cloud dependencies:
 
-### 1. NLP Incident Triage & Smart Dispatch Model (`services/ai_triage.py`)
-- **Architecture:** Lexical Semantic Bag-of-Words & Continuous Severity Scoring.
-- **Threat Index ($0.00$ to $1.00$):** Scans incoming citizen SOS descriptions for weighted urgency markers (e.g., `marooned`, `stranded`, `water rising fast`, `infant`, `breached`) and calculates an objective threat score.
-- **Urgency Calibrator:** Automatically classifies reports into standardized emergency tiers (`LOW`, `MEDIUM`, `HIGH`, `CRITICAL`), preventing human under/over-reporting.
-- **Automated Resource Recommendation:** Dynamically links incident semantics directly to required response assets:
+### 1. NLP-Based Incident Triage (`services/ai_triage.py`)
+- **Method:** Lexical Bag-of-Words & Semantic Urgency Scoring.
+- **Threat Index ($0.00$ to $1.00$):** Scans incoming citizen SOS descriptions for weighted distress keywords (`marooned`, `stranded`, `water rising fast`, `infant`, `breached`) and calculates an explainable threat score.
+- **Urgency Classification:** Classifies reports into standardized emergency tiers (`LOW`, `MEDIUM`, `HIGH`, `CRITICAL`) to assist operators in prioritizing rapid response.
+- **Targeted Resource Recommendations:** Suggests disaster response assets based on semantic patterns:
   - *Submerged / Stranded / Water Influx* $\to$ `Rescue Boat`
   - *Casualties / Trauma / Medical Distress* $\to$ `Medical Unit`
   - *Displaced Residents / Homelessness* $\to$ `Relief Camp`
   - *Embankment Collapse / Road Cutoff* $\to$ `SDRF Squad`
-  - *Potable Water Contamination* $\to$ `Water Tanker`
+  - *Drinking Water Shortages* $\to$ `Water Tanker`
 - **Explainable Rationale:** Automatically generates human-auditable rationale notes stored with the incident for dispatch coordinators.
 
-### 2. Machine Learning Hydrological Flood Crest Predictor (`services/trend_predictor.py`)
-- **Architecture:** Calibrated Logistic (Sigmoid) Regression & Nearest-Neighbor Historical Analogue Modeling.
-- **Dynamic Telemetry Ingestion:** Aggregates real-time observations across all active river gauges (Subansiri, Gai River) and precipitation stations, merged with 48-hour IMD rainfall projections.
-- **Continuous Crest Probability Function:**
+### 2. Experimental Rainfall-Runoff Prediction (`services/trend_predictor.py`)
+- **Method:** Parameterised Logistic (Sigmoid) Curve & Nearest-Neighbour Historical Analogue Matching.
+- **Dynamic Ingestion:** Ingests live Dhemaji weather observations alongside sample station telemetry and IMD rainfall estimates.
+- **Empirical Crest Probability Function:**
   $$\text{Prob}(\text{Flood}) = \frac{1}{1 + e^{-k \cdot (\text{Rainfall}_{72\text{h}} - x_0) - (\text{WaterMargin} \cdot \alpha)}}$$
-  where $x_0 = 175\text{ mm}$ (historical basin saturation threshold), $k = 0.022$ (steepness coefficient), and $\text{WaterMargin}$ is the active river level relative to statutory danger levels ($86.00\text{ m}$).
-- **Historical Analogue Matching:** Queries historical flood datasets (ASDMA 2020–2024 Dhemaji flood archives) to infer lead time to peak water surge (12h, 18h, 24h, 36h).
+  where $x_0 = 175\text{ mm}$ (historical basin saturation threshold), $k = 0.022$ (steepness coefficient), and $\text{WaterMargin}$ is the river water level relative to the danger mark ($86.00\text{ m}$).
+- **Historical Analogue Matching:** Matches current precipitation loads with ASDMA Dhemaji flood archives (2020–2024 records) to estimate flood peak lead times (12h, 18h, 24h, 36h).
+
+### 3. Data Transparency & Operational Disclosure
+- **Live Meteorological Data:** Real-time ground precipitation, temperature, humidity, and wind speed fetched live from Open-Meteo for Dhemaji coordinates (27.48°N, 94.58°E).
+- **Simulated Station Multipliers:** Surrounding circle stations (Jonai, Silapathar, Gogamukh) apply scaled multipliers ($0.8\times$ to $1.1\times$) to demonstrate multi-station telemetry ingestion.
+- **Sample Datasets:** River gauge levels and government forecast bulletins (`cwc_flood_forecast.json`, `imd_weather_forecast.json`) use calibrated historical baseline samples.
+- **Offline Mesh Status:** Uses browser-level `BroadcastChannel` and `localStorage` between open tabs/windows on the same node, with an experimental Web Bluetooth (BLE) UI demonstration.
 
 ---
 
