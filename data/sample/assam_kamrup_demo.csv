@@ -1,0 +1,8 @@
+state,district,station_name,station_type,latitude,longitude,variable,value,unit,observed_at,is_simulated
+Assam,Kamrup Metropolitan,Guwahati Aero (Borjhar),Rainfall,26.1061,91.5859,rainfall_24h,122.5,mm,2026-10-11 18:00:00,true
+Assam,Kamrup Metropolitan,Dispur Capital Complex,Rainfall,26.1422,91.7898,rainfall_24h,88.4,mm,2026-10-11 18:00:00,true
+Assam,Kamrup Metropolitan,Jalukbari (Gauhati Univ),Rainfall,26.1550,91.6628,rainfall_24h,94.0,mm,2026-10-11 18:00:00,true
+Assam,Kamrup Metropolitan,Chandmari Water Works,Rainfall,26.1880,91.7770,rainfall_24h,135.0,mm,2026-10-11 18:00:00,true
+Assam,Kamrup Metropolitan,Khanapara Research Station,Rainfall,26.1264,91.8172,rainfall_24h,,mm,2026-10-11 18:00:00,true
+Assam,Kamrup Metropolitan,Brahmaputra River (DC Court),River Gauge,26.1925,91.7455,water_level,49.85,m,2026-10-11 18:00:00,true
+Assam,Kamrup Metropolitan,Bharalu River Basin,River Gauge,26.1750,91.7320,water_level,47.20,m,2026-10-11 18:00:00,true

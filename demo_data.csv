@@ -1,0 +1,11 @@
+state,district,latitude,longitude,rainfall_mm,is_simulated_data
+Andhra Pradesh,Anantapur,14.6819,77.6006,511.5,true
+Andhra Pradesh,Chittoor,13.2172,79.1003,12.4,true
+Andhra Pradesh,East Godavari,16.9380,82.2288,,true
+Andhra Pradesh,Guntur,16.3067,80.4365,511.5,true
+Andhra Pradesh,Krishna,16.2997,81.0805,45.2,true
+Andhra Pradesh,Kurnool,15.8281,78.0373,511.5,true
+Andhra Pradesh,Nellore,14.4426,79.9865,0.0,true
+Andhra Pradesh,Prakasam,15.5000,79.9000,123.4,true
+Andhra Pradesh,Srikakulam,18.2949,83.8938,511.5,true
+Andhra Pradesh,Visakhapatnam,17.6868,83.2185,2.1,true

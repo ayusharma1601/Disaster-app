@@ -1,0 +1,62 @@
+[
+  {
+    "year": 2020,
+    "monsoon_month": "July",
+    "antecedent_3day_rainfall_mm": 310.5,
+    "peak_24h_rainfall_mm": 165.0,
+    "catchment_soil_saturation_pct": 92,
+    "subansiri_peak_level_m": 86.85,
+    "flood_severity": "EXTREME",
+    "embankment_breaches": 4,
+    "lead_time_hours_to_peak": 18,
+    "notes": "Severe overtopping along Sissiborgaon and NH-15 bridge approaches."
+  },
+  {
+    "year": 2021,
+    "monsoon_month": "August",
+    "antecedent_3day_rainfall_mm": 245.0,
+    "peak_24h_rainfall_mm": 130.0,
+    "catchment_soil_saturation_pct": 85,
+    "subansiri_peak_level_m": 86.40,
+    "flood_severity": "HIGH",
+    "embankment_breaches": 2,
+    "lead_time_hours_to_peak": 24,
+    "notes": "Gai river flash flood inundated agricultural paddies in Silapathar."
+  },
+  {
+    "year": 2022,
+    "monsoon_month": "June",
+    "antecedent_3day_rainfall_mm": 380.0,
+    "peak_24h_rainfall_mm": 210.0,
+    "catchment_soil_saturation_pct": 98,
+    "subansiri_peak_level_m": 87.40,
+    "flood_severity": "CATASTROPHIC",
+    "embankment_breaches": 7,
+    "lead_time_hours_to_peak": 12,
+    "notes": "Historic Brahmaputra & Subansiri basin deluge; massive road cutoffs in Jonai."
+  },
+  {
+    "year": 2023,
+    "monsoon_month": "July",
+    "antecedent_3day_rainfall_mm": 195.0,
+    "peak_24h_rainfall_mm": 95.0,
+    "catchment_soil_saturation_pct": 74,
+    "subansiri_peak_level_m": 85.65,
+    "flood_severity": "MODERATE",
+    "embankment_breaches": 0,
+    "lead_time_hours_to_peak": 36,
+    "notes": "Controlled river runoff; warning levels approached but no major breach."
+  },
+  {
+    "year": 2024,
+    "monsoon_month": "July",
+    "antecedent_3day_rainfall_mm": 280.0,
+    "peak_24h_rainfall_mm": 145.0,
+    "catchment_soil_saturation_pct": 89,
+    "subansiri_peak_level_m": 86.60,
+    "flood_severity": "HIGH",
+    "embankment_breaches": 3,
+    "lead_time_hours_to_peak": 20,
+    "notes": "Jiadhal alluvial fan siltation choked railway culverts."
+  }
+]

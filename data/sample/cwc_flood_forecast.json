@@ -1,0 +1,63 @@
+[
+  {
+    "agency": "Central Water Commission (CWC) - Ministry of Jal Shakti, Government of India",
+    "basin": "Brahmaputra Basin (Subansiri & Northern Tributaries Sub-Basin)",
+    "district": "Dhemaji District, Assam",
+    "issued_at": "2026-10-13 09:00 IST",
+    "bulletin_code": "CWC-NER-FF-20261013-0900",
+    "stations": [
+      {
+        "station_name": "Badatighat (Subansiri River)",
+        "river": "Subansiri River",
+        "current_level_m": 86.20,
+        "warning_level_m": 85.00,
+        "danger_level_m": 86.00,
+        "hfl_record_m": 87.85,
+        "current_status": "Severe Flood Situation (0.20m ABOVE Danger Level)",
+        "trend": "RISING",
+        "predicted_peak_m": 86.55,
+        "forecast_time": "2026-10-13 22:00 IST",
+        "status_color": "RED"
+      },
+      {
+        "station_name": "Gai River Crossing (NH-15 Bridge)",
+        "river": "Gai River (Flash Flood Corridor)",
+        "current_level_m": 103.80,
+        "warning_level_m": 102.50,
+        "danger_level_m": 103.50,
+        "hfl_record_m": 104.90,
+        "current_status": "Extreme Flood Situation (0.30m ABOVE Danger Level)",
+        "trend": "RISING RAPIDLY",
+        "predicted_peak_m": 104.15,
+        "forecast_time": "2026-10-13 18:00 IST",
+        "status_color": "RED"
+      },
+      {
+        "station_name": "Jiadhal Railway Outpost",
+        "river": "Jiadhal / Kumotia River",
+        "current_level_m": 91.10,
+        "warning_level_m": 90.50,
+        "danger_level_m": 91.50,
+        "hfl_record_m": 92.40,
+        "current_status": "Above Warning Level (Approaching Danger Level by 0.40m)",
+        "trend": "STEADY",
+        "predicted_peak_m": 91.35,
+        "forecast_time": "2026-10-14 06:00 IST",
+        "status_color": "ORANGE"
+      },
+      {
+        "station_name": "Jonai-Lali River Confluence",
+        "river": "Lali / Siang Confluence",
+        "current_level_m": 128.40,
+        "warning_level_m": 129.00,
+        "danger_level_m": 130.00,
+        "hfl_record_m": 131.20,
+        "current_status": "Normal Flow (0.60m Below Warning Level)",
+        "trend": "FALLING SLOWLY",
+        "predicted_peak_m": 128.50,
+        "forecast_time": "2026-10-14 12:00 IST",
+        "status_color": "GREEN"
+      }
+    ]
+  }
+]

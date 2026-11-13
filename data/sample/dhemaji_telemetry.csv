@@ -1,0 +1,9 @@
+state,district,station_name,station_type,latitude,longitude,variable,value,unit,observed_at,river_name,warning_level,danger_level
+Assam,Dhemaji,Dhemaji District HQ (Civil Station),Rainfall,27.4833,94.5833,rainfall_24h,142.0,mm,2026-10-18 05:39:02,,,
+Assam,Dhemaji,Jonai Sub-Division Station,Rainfall,27.8333,95.1667,rainfall_24h,98.5,mm,2026-10-18 05:39:02,,,
+Assam,Dhemaji,Silapathar Revenue Circle,Rainfall,27.5950,94.7250,rainfall_24h,115.0,mm,2026-10-18 05:39:02,,,
+Assam,Dhemaji,Gogamukh Block Office,Rainfall,27.4200,94.4000,rainfall_24h,84.0,mm,2026-10-18 05:39:02,,,
+Assam,Dhemaji,Sissiborgaon Hydrology Post,Rainfall,27.5100,94.6700,rainfall_24h,,mm,2026-10-18 05:39:02,,,
+Assam,Dhemaji,Jiabhalali-Subansiri Confluence,River Gauge,27.3500,94.2500,water_level,86.20,m,2026-10-18 05:39:02,Subansiri River,85.00,86.00
+Assam,Dhemaji,Gai River Gauge Site,River Gauge,27.5200,94.6200,water_level,103.80,m,2026-10-18 05:39:02,Gai River,102.50,103.50
+Assam,Dhemaji,Jiabhoroli River Outpost,River Gauge,27.4500,94.5100,water_level,91.10,m,2026-10-18 05:39:02,Jiabhoroli / Local Tributary,90.50,91.50

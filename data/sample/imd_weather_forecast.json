@@ -1,0 +1,43 @@
+[
+  {
+    "agency": "India Meteorological Department (IMD) - Regional Meteorological Centre, Guwahati",
+    "region": "Dhemaji District, Upper Assam",
+    "bulletin_id": "IMD-GH-FC-20261013-08",
+    "issued_at": "2026-10-13 08:30 IST",
+    "synoptic_situation": "Upper air cyclonic circulation over East Assam & Sub-Himalayan West Bengal, actively feeding moisture across Brahmaputra and Subansiri drainage corridors.",
+    "forecast_periods": [
+      {
+        "period": "Day 1 (Next 24h)",
+        "rainfall_category": "Very Heavy to Extremely Heavy Rainfall",
+        "predicted_mm": "115.5 - 180.0 mm",
+        "warning_color": "RED",
+        "warning_label": "Red Alert: Take Action",
+        "impact": "Severe waterlogging in low-lying revenue circles; localized flash flooding across Gai & Jiadhal river alluvial fans."
+      },
+      {
+        "period": "Day 2 (24h - 48h)",
+        "rainfall_category": "Heavy to Very Heavy Rainfall",
+        "predicted_mm": "70.0 - 125.0 mm",
+        "warning_color": "ORANGE",
+        "warning_label": "Orange Alert: Be Prepared",
+        "impact": "Sustained high runoff; prolonged drainage congestion in Silapathar and Sissiborgaon."
+      },
+      {
+        "period": "Day 3 (48h - 72h)",
+        "rainfall_category": "Moderate to Heavy Rainfall",
+        "predicted_mm": "35.0 - 65.0 mm",
+        "warning_color": "YELLOW",
+        "warning_label": "Yellow Alert: Be Updated",
+        "impact": "Intermittent thundershowers; river water levels remain close to warning thresholds."
+      },
+      {
+        "period": "Day 4 - 5 Outlook",
+        "rainfall_category": "Light to Moderate Showers",
+        "predicted_mm": "15.0 - 30.0 mm",
+        "warning_color": "GREEN",
+        "warning_label": "Green: No Severe Warning",
+        "impact": "Receding precipitation trends; residual embankment monitoring required."
+      }
+    ]
+  }
+]
