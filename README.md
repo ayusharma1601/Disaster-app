@@ -141,7 +141,19 @@ disaster-app/
 - Python 3.10 or higher
 - Git
 
-### Installation
+### Installation & Quick Start
+
+#### Method A: Instant One-Click Startup (Windows)
+Run the automated launcher script from PowerShell or Command Prompt:
+```cmd
+cd disaster-app
+start.bat
+```
+*(This automatically creates the virtual environment, installs dependencies, loads baseline telemetry, and opens the local server).*
+
+---
+
+#### Method B: Step-by-Step Manual Setup
 
 1. **Clone the repository:**
    ```bash
@@ -149,35 +161,60 @@ disaster-app/
    cd disaster-app
    ```
 
-2. **Create and activate a virtual environment:**
+2. **Create a virtual environment:**
    ```bash
    python -m venv venv
-   # On Windows:
-   venv\Scripts\activate
-   # On Linux/macOS:
-   source venv/bin/activate
    ```
 
-3. **Install dependencies:**
+3. **Activate the virtual environment:**
+   - **On Windows (PowerShell):**
+     ```powershell
+     # If script execution is blocked, allow it for this session:
+     Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+     .\venv\Scripts\Activate.ps1
+     ```
+     *Alternatively, in Windows Command Prompt (cmd.exe):*
+     ```cmd
+     venv\Scripts\activate.bat
+     ```
+   - **On Linux / macOS:**
+     ```bash
+     source venv/bin/activate
+     ```
+
+4. **Install required dependencies:**
    ```bash
    pip install -r requirements.txt
    ```
 
-4. **Initialize sample telemetry:**
+5. **Seed demo hydrological telemetry & database:**
    ```bash
    python load_demo.py
    ```
 
-5. **Start the platform:**
+6. **Start the local ASGI web server:**
    ```bash
    python -m uvicorn main:app --host 0.0.0.0 --port 8000
    ```
-   Or simply execute `start.bat` on Windows.
 
-6. **Access the application:**
-   - Web Platform: [http://localhost:8000](http://localhost:8000)
-   - Interactive API Docs (OpenAPI/Swagger): [http://localhost:8000/docs](http://localhost:8000/docs)
-   - LAN / Mobile Access: `http://<YOUR_LOCAL_IP>:8000`
+---
+
+## How to Access the Website Locally
+
+Once the server is running (`Uvicorn running on http://0.0.0.0:8000`), open your web browser to any of the following URLs:
+
+| View / Tool | Local URL | Description |
+|---|---|---|
+| **Main Tactical Dashboard** | [http://localhost:8000](http://localhost:8000) or [http://127.0.0.1:8000](http://127.0.0.1:8000) | Full 3D WebGL Earth globe, 2D tactical flood map, live telemetry, and community incident feed. |
+| **Mobile / LAN Access** | `http://<YOUR_LOCAL_IP>:8000` | Access the platform from smartphones, tablets, or other laptops on the same Wi-Fi network (find your IP via `ipconfig` on Windows or `ifconfig` on Linux/Mac). |
+| **Interactive API Documentation** | [http://localhost:8000/docs](http://localhost:8000/docs) | Interactive Swagger UI to inspect and test all REST API endpoints. |
+| **Alternative API Docs** | [http://localhost:8000/redoc](http://localhost:8000/redoc) | Clean ReDoc API documentation format. |
+| **Terms & Safety Disclosures** | [http://localhost:8000/terms](http://localhost:8000/terms) | Statutory compliance disclosures and offline safety guidelines. |
+
+### Default Operator Credentials (For Triage & Resource Allocation)
+To test responder workflows (assigning boats, changing incident statuses, reviewing audit logs), click **Operator Login** in the top navigation bar:
+- **Admin Role:** Username: `admin` | Password: `admin123`
+- **Field Responder Role:** Username: `operator` | Password: `operator123`
 
 ---
 
