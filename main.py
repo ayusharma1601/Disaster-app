@@ -437,9 +437,12 @@ def submit_incident(incident: IncidentCreate, request: Request, db: Session = De
     triage_result = IncidentTriageAI.triage_incident(clean_cat, clean_desc, clean_loc)
     
     # Use AI urgency if original was uncalibrated or if AI detects higher threat
-    assigned_urgency = clean_urg
-    if triage_result["ai_suggested_urgency"] == "CRITICAL" or clean_urg not in ["LOW", "MEDIUM", "HIGH", "CRITICAL"]:
-        assigned_urgency = triage_result["ai_suggested_urgency"]
+    assigned_urgency = clean_urg.upper()
+    triage_urgency = triage_result["ai_suggested_urgency"].upper()
+    if triage_urgency in ["HIGH", "CRITICAL"]:
+        assigned_urgency = triage_urgency
+    elif assigned_urgency not in ["LOW", "MEDIUM", "HIGH", "CRITICAL"]:
+        assigned_urgency = "MEDIUM"
 
     db_incident = models.Incident(
         category=clean_cat,
@@ -617,7 +620,11 @@ def assign_resource_to_incident(
         raise HTTPException(status_code=404, detail="Target incident not found.")
 
     res.assigned_incident_id = inc.id
-    res.availability_status = payload.status or "ALLOCATED"
+    status_value = (payload.status or "ALLOCATED").strip().upper()
+    RESOURCE_STATUS_VALUES = {"AVAILABLE", "ALLOCATED", "MAINTENANCE", "OFFLINE"}
+    if status_value not in RESOURCE_STATUS_VALUES:
+        raise HTTPException(status_code=400, detail="Invalid status value for resource allocation.")
+    res.availability_status = status_value
     res.last_updated_at = datetime.now(timezone.utc)
 
     # Also automatically progress incident to ASSIGNED if still VERIFIED
