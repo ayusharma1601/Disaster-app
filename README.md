@@ -53,6 +53,32 @@ The platform integrates real-time meteorological observations with edge-computed
 
 ---
 
+## AI Architecture & Intelligence Layer
+
+The platform integrates two decoupled, local-first intelligence models engineered to operate with zero external API dependencies—ensuring complete reliability during cellular blackout conditions:
+
+### 1. NLP Incident Triage & Smart Dispatch Model (`services/ai_triage.py`)
+- **Architecture:** Lexical Semantic Bag-of-Words & Continuous Severity Scoring.
+- **Threat Index ($0.00$ to $1.00$):** Scans incoming citizen SOS descriptions for weighted urgency markers (e.g., `marooned`, `stranded`, `water rising fast`, `infant`, `breached`) and calculates an objective threat score.
+- **Urgency Calibrator:** Automatically classifies reports into standardized emergency tiers (`LOW`, `MEDIUM`, `HIGH`, `CRITICAL`), preventing human under/over-reporting.
+- **Automated Resource Recommendation:** Dynamically links incident semantics directly to required response assets:
+  - *Submerged / Stranded / Water Influx* $\to$ `Rescue Boat`
+  - *Casualties / Trauma / Medical Distress* $\to$ `Medical Unit`
+  - *Displaced Residents / Homelessness* $\to$ `Relief Camp`
+  - *Embankment Collapse / Road Cutoff* $\to$ `SDRF Squad`
+  - *Potable Water Contamination* $\to$ `Water Tanker`
+- **Explainable Rationale:** Automatically generates human-auditable rationale notes stored with the incident for dispatch coordinators.
+
+### 2. Machine Learning Hydrological Flood Crest Predictor (`services/trend_predictor.py`)
+- **Architecture:** Calibrated Logistic (Sigmoid) Regression & Nearest-Neighbor Historical Analogue Modeling.
+- **Dynamic Telemetry Ingestion:** Aggregates real-time observations across all active river gauges (Subansiri, Gai River) and precipitation stations, merged with 48-hour IMD rainfall projections.
+- **Continuous Crest Probability Function:**
+  $$\text{Prob}(\text{Flood}) = \frac{1}{1 + e^{-k \cdot (\text{Rainfall}_{72\text{h}} - x_0) - (\text{WaterMargin} \cdot \alpha)}}$$
+  where $x_0 = 175\text{ mm}$ (historical basin saturation threshold), $k = 0.022$ (steepness coefficient), and $\text{WaterMargin}$ is the active river level relative to statutory danger levels ($86.00\text{ m}$).
+- **Historical Analogue Matching:** Queries historical flood datasets (ASDMA 2020–2024 Dhemaji flood archives) to infer lead time to peak water surge (12h, 18h, 24h, 36h).
+
+---
+
 ## Technical Stack
 
 - **Backend:** Python 3.10+, FastAPI (ASGI architecture on Uvicorn)
