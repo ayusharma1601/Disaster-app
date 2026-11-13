@@ -194,6 +194,9 @@ class IncidentResponse(BaseModel):
     urgency: str
     reported_at: datetime
     assigned_to: Optional[str] = None
+    ai_severity_score: Optional[float] = 0.50
+    ai_recommended_resource: Optional[str] = None
+    ai_triage_rationale: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -414,15 +417,27 @@ def submit_incident(incident: IncidentCreate, request: Request, db: Session = De
     clean_urg = sanitize_input(incident.urgency)
     clean_contact = sanitize_input(incident.reporter_contact) if incident.reporter_contact else None
 
+    # AI Incident Triage & Operational Assessment (On-device NLP)
+    from services.ai_triage import IncidentTriageAI
+    triage_result = IncidentTriageAI.triage_incident(clean_cat, clean_desc, clean_loc)
+    
+    # Use AI urgency if original was uncalibrated or if AI detects higher threat
+    assigned_urgency = clean_urg
+    if triage_result["ai_suggested_urgency"] == "CRITICAL" or clean_urg not in ["LOW", "MEDIUM", "HIGH", "CRITICAL"]:
+        assigned_urgency = triage_result["ai_suggested_urgency"]
+
     db_incident = models.Incident(
         category=clean_cat,
         description=clean_desc,
         location_text=clean_loc,
         latitude=incident.latitude,
         longitude=incident.longitude,
-        urgency=clean_urg,
+        urgency=assigned_urgency,
         reporter_contact=clean_contact,
-        status="UNVERIFIED"
+        status="UNVERIFIED",
+        ai_severity_score=triage_result["ai_severity_score"],
+        ai_recommended_resource=triage_result["ai_recommended_resource"],
+        ai_triage_rationale=triage_result["triage_rationale"]
     )
     db.add(db_incident)
     db.commit()
@@ -433,7 +448,7 @@ def submit_incident(incident: IncidentCreate, request: Request, db: Session = De
         actor_name="Public Reporter",
         old_status=None,
         new_status="UNVERIFIED",
-        note="Initial report submission via web interface."
+        note=f"Initial submission. AI Triage: Severity {triage_result['ai_severity_score']}, Recommended: {triage_result['ai_recommended_resource']}."
     )
     db.add(event)
     db.commit()
@@ -576,6 +591,12 @@ def assign_resource_to_incident(
     if not res:
         raise HTTPException(status_code=404, detail="Resource not found.")
 
+    if res.availability_status == "ALLOCATED" and res.assigned_incident_id != payload.incident_id:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Resource '{res.name}' is already allocated to Incident #{res.assigned_incident_id}. Please release it before reassigning."
+        )
+
     inc = db.query(models.Incident).filter(models.Incident.id == payload.incident_id).first()
     if not inc:
         raise HTTPException(status_code=404, detail="Target incident not found.")
@@ -672,13 +693,52 @@ def get_flood_forecast():
 # ── Empirical Historical Trend & Early Warning Prediction API ──
 @app.get("/api/forecast/trend-prediction")
 def get_trend_prediction():
-    """Predicts future flood crest probability and lead time based on historical rainfall-runoff analogs."""
+    """
+    Predicts future flood crest probability and lead time by dynamically aggregating
+    active station observations, projected rainfall forecasts, and historical hydrological analogs.
+    """
     from services.trend_predictor import TrendPredictor
+
+    # Dynamically extract current baseline rainfall and water level from active scenario observations
+    telemetry_data = get_current_telemetry()
+    observations = telemetry_data.get("observations", [])
+
+    current_rainfall = 0.0
+    rainfall_count = 0
+    max_water_level = 85.50
+    danger_mark = 86.00
+
+    for obs in observations:
+        if obs.get("variable") == "rainfall_24h" and obs.get("value") is not None:
+            current_rainfall += float(obs["value"])
+            rainfall_count += 1
+        elif obs.get("variable") == "water_level" and obs.get("value") is not None:
+            lvl = float(obs["value"])
+            if lvl > max_water_level:
+                max_water_level = lvl
+            if obs.get("danger_level"):
+                danger_mark = float(obs["danger_level"])
+
+    avg_rainfall_24h = round(current_rainfall / max(1, rainfall_count), 1) if rainfall_count > 0 else 45.0
+
+    # Projected 48h rainfall from IMD forecast bulletin if available
+    projected_rain_48h = 110.0
+    try:
+        imd_path = Path("data/sample/imd_weather_forecast.json")
+        if imd_path.exists():
+            with open(imd_path, "r", encoding="utf-8") as f:
+                imd_data = json.load(f)
+                rain_forecasts = [float(day.get("rainfall_predicted_mm", 40.0)) for day in imd_data.get("forecast_5day", [])[:2]]
+                if rain_forecasts:
+                    projected_rain_48h = round(sum(rain_forecasts), 1)
+    except Exception:
+        pass
+
     return TrendPredictor.predict_flood_from_rainfall_trends(
-        current_rainfall_24h=142.0,
-        projected_rain_48h=165.0,
-        current_water_level=86.20,
-        danger_level=86.00
+        current_rainfall_24h=avg_rainfall_24h,
+        projected_rain_48h=projected_rain_48h,
+        current_water_level=max_water_level,
+        danger_level=danger_mark
     )
 
 # ── Audit Logging API (Phase 6 Deliverable) ───────────────────

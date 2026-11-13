@@ -87,6 +87,9 @@ class Incident(Base):
     reported_at = Column(DateTime, default=utc_now)
     reporter_contact = Column(String, nullable=True)  # Strictly hidden from public views
     assigned_to = Column(String, nullable=True)
+    ai_severity_score = Column(Float, nullable=True, default=0.50)  # On-device AI Threat Score 0.00 to 1.00
+    ai_recommended_resource = Column(String, nullable=True)  # AI Triage dispatch suggestion
+    ai_triage_rationale = Column(Text, nullable=True)  # AI reasoning
     updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
 
     events = relationship("IncidentEvent", back_populates="incident")

@@ -49,6 +49,18 @@ def test_gate5():
     print("RUNNING GATE 5 EVALUATION & VERIFICATION SUITE")
     print("=" * 65)
 
+    # Ensure database fixture has a guaranteed stale shelter record (>24h old)
+    from database import SessionLocal
+    import models
+    db_setup = SessionLocal()
+    try:
+        stale_fixture = db_setup.query(models.Resource).filter(models.Resource.name == "Jonai Higher Secondary Relief Shelter").first()
+        if stale_fixture:
+            stale_fixture.last_updated_at = datetime.now(timezone.utc) - timedelta(hours=36)
+            db_setup.commit()
+    finally:
+        db_setup.close()
+
     # 1. Login as operator
     login_status, login_res = make_req(f"{BASE_URL}/api/auth/login", method="POST", payload={
         "username": "operator",

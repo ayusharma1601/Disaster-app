@@ -40,9 +40,13 @@ def run_all():
             print(res.stdout)
             print(res.stderr)
 
+    pass_rate = round((passed / max(1, total)) * 100, 1)
     print("\n" + "=" * 70)
-    print(f"ALL TESTS COMPLETED: {passed}/{total} SUITES PASSED (100% PASS RATE)")
+    print(f"ALL TESTS COMPLETED: {passed}/{total} SUITES PASSED ({pass_rate}% PASS RATE)")
     print("=" * 70)
+    if passed < total:
+        sys.exit(1)
+    sys.exit(0)
 
 if __name__ == "__main__":
     run_all()

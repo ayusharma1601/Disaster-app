@@ -3070,6 +3070,21 @@
                     }
                 }
 
+                let aiBadge = '';
+                if (inc.ai_severity_score !== undefined && inc.ai_severity_score !== null) {
+                    const aiScore = parseFloat(inc.ai_severity_score);
+                    const aiScoreColor = aiScore >= 0.8 ? '#ef4444' : (aiScore >= 0.6 ? '#f97316' : '#10b981');
+                    aiBadge = `
+                        <div style="margin-top:0.35rem; padding:0.3rem 0.5rem; background:rgba(0,0,0,0.25); border-left:3px solid ${aiScoreColor}; border-radius:3px; font-size:0.68rem;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span style="font-weight:700; color:${aiScoreColor};">⚡ AI Triage Score: ${aiScore.toFixed(2)}</span>
+                                <span style="color:var(--text-muted);">Suggests: <strong style="color:var(--accent);">${inc.ai_recommended_resource || 'SDRF'}</strong></span>
+                            </div>
+                            ${inc.ai_triage_rationale ? `<div style="color:var(--text-muted); font-size:0.64rem; margin-top:2px;">${inc.ai_triage_rationale}</div>` : ''}
+                        </div>
+                    `;
+                }
+
                 card.innerHTML = `
                     <div><strong>${inc.category}</strong>: ${inc.location_text || 'Coordinates pinned'}</div>
                     <div style="margin-top: 0.2rem; color: var(--text-muted);">${inc.description}</div>
@@ -3077,6 +3092,7 @@
                         <span>Status: <strong style="color:var(--accent);">${inc.status}</strong></span>
                         <span>Urgency: <strong>${inc.urgency}</strong></span>
                     </div>
+                    ${aiBadge}
                     ${actionsHtml}
                 `;
                 feed.appendChild(card);
