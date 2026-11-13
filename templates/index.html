@@ -2425,6 +2425,17 @@
         window.addEventListener('keydown', unlockAudioOnFirstGesture, { passive: true });
         window.addEventListener('touchstart', unlockAudioOnFirstGesture, { passive: true });
 
+        let monsoonAudioElement = null;
+
+        function stopMonsoonAudio() {
+            if (monsoonAudioElement) {
+                try {
+                    monsoonAudioElement.pause();
+                    monsoonAudioElement.currentTime = 0;
+                } catch (e) {}
+            }
+        }
+
         function playThunderboltSound() {
             try {
                 // Force-stop and mute any existing buzzer/siren completely before playing thunder
@@ -2432,105 +2443,23 @@
                 stopBuzzerLoop();
                 updateBuzzerButtonStates(false);
 
-                initAudioContext();
-                if (!audioCtx) return;
+                // Stop any existing monsoon audio before starting
+                stopMonsoonAudio();
 
-                const t0 = audioCtx.currentTime;
-
-                // 1. Crisp, loud electrical lightning arc / snap
-                const snapLen = Math.floor(audioCtx.sampleRate * 0.08); // 80ms sharp snap
-                const snapBuf = audioCtx.createBuffer(1, snapLen, audioCtx.sampleRate);
-                const snapData = snapBuf.getChannelData(0);
-                for (let i = 0; i < snapLen; i++) {
-                    snapData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (snapLen * 0.15));
+                if (!monsoonAudioElement) {
+                    monsoonAudioElement = new Audio('/static/audio/monsoon_thunder.mp3');
+                    monsoonAudioElement.preload = 'auto';
                 }
-                const snapSrc = audioCtx.createBufferSource();
-                snapSrc.buffer = snapBuf;
-                const snapFilter = audioCtx.createBiquadFilter();
-                snapFilter.type = 'highpass';
-                snapFilter.frequency.setValueAtTime(1600, t0);
-                const snapGain = audioCtx.createGain();
-                snapGain.gain.setValueAtTime(0.7, t0);
-                snapGain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.08);
-
-                snapSrc.connect(snapFilter);
-                snapFilter.connect(snapGain);
-                snapGain.connect(audioCtx.destination);
-                snapSrc.start(t0);
-
-                // 2. High-energy explosive lightning crack
-                const crackLen = Math.floor(audioCtx.sampleRate * 0.28);
-                const crackBuf = audioCtx.createBuffer(1, crackLen, audioCtx.sampleRate);
-                const crackData = crackBuf.getChannelData(0);
-                for (let i = 0; i < crackLen; i++) {
-                    crackData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (crackLen * 0.25));
+                monsoonAudioElement.currentTime = 0;
+                monsoonAudioElement.volume = 0.85;
+                const playPromise = monsoonAudioElement.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(function(err) {
+                        console.warn("Autoplay audio blocked or file unavailable, falling back:", err);
+                    });
                 }
-                const crackSrc = audioCtx.createBufferSource();
-                crackSrc.buffer = crackBuf;
-                const crackFilter = audioCtx.createBiquadFilter();
-                crackFilter.type = 'bandpass';
-                crackFilter.frequency.setValueAtTime(800, t0);
-                crackFilter.Q.setValueAtTime(2.0, t0);
-                const crackGain = audioCtx.createGain();
-                crackGain.gain.setValueAtTime(0.85, t0 + 0.01);
-                crackGain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.28);
-
-                crackSrc.connect(crackFilter);
-                crackFilter.connect(crackGain);
-                crackGain.connect(audioCtx.destination);
-                crackSrc.start(t0 + 0.01);
-
-                // 3. Deep rolling thunder echoes & acoustic decay (4.5s atmospheric rumble)
-                const rumbleDuration = 4.5;
-                const rumbleLen = Math.floor(audioCtx.sampleRate * rumbleDuration);
-                const rumbleBuf = audioCtx.createBuffer(1, rumbleLen, audioCtx.sampleRate);
-                const rumbleData = rumbleBuf.getChannelData(0);
-                for (let i = 0; i < rumbleLen; i++) {
-                    const normTime = i / audioCtx.sampleRate;
-                    // Multi-peaked thunder claps echoing across the valley
-                    const envelope = Math.exp(-normTime / 1.8) * (
-                        0.55 + 
-                        0.35 * Math.sin(normTime * 5.2) + 
-                        0.25 * Math.cos(normTime * 2.8)
-                    );
-                    rumbleData[i] = (Math.random() * 2 - 1) * Math.max(0, envelope);
-                }
-                const rumbleSrc = audioCtx.createBufferSource();
-                rumbleSrc.buffer = rumbleBuf;
-
-                const rumbleFilter = audioCtx.createBiquadFilter();
-                rumbleFilter.type = 'lowpass';
-                rumbleFilter.frequency.setValueAtTime(320, t0);
-                rumbleFilter.frequency.exponentialRampToValueAtTime(50, t0 + rumbleDuration);
-
-                // Sub-bass physical vibration
-                const subOsc = audioCtx.createOscillator();
-                subOsc.type = 'sine';
-                subOsc.frequency.setValueAtTime(95, t0 + 0.03);
-                subOsc.frequency.exponentialRampToValueAtTime(32, t0 + 2.5);
-
-                const subGain = audioCtx.createGain();
-                subGain.gain.setValueAtTime(0.001, t0);
-                subGain.gain.linearRampToValueAtTime(0.5, t0 + 0.08);
-                subGain.gain.exponentialRampToValueAtTime(0.001, t0 + 2.6);
-
-                subOsc.connect(subGain);
-                subGain.connect(audioCtx.destination);
-                subOsc.start(t0 + 0.03);
-                subOsc.stop(t0 + 2.7);
-
-                const rumbleGain = audioCtx.createGain();
-                rumbleGain.gain.setValueAtTime(0.001, t0);
-                rumbleGain.gain.linearRampToValueAtTime(0.75, t0 + 0.07);
-                rumbleGain.gain.exponentialRampToValueAtTime(0.001, t0 + rumbleDuration);
-
-                rumbleSrc.connect(rumbleFilter);
-                rumbleFilter.connect(rumbleGain);
-                rumbleGain.connect(audioCtx.destination);
-                rumbleSrc.start(t0 + 0.03);
-
             } catch (e) {
-                console.warn("Thunderbolt audio synthesis error:", e);
+                console.warn("Monsoon audio playback error:", e);
             }
         }
 
@@ -2694,12 +2623,14 @@
                 });
                 if (res.ok) {
                     if (scenarioName === 'live') {
+                        stopMonsoonAudio();
                         muteEmergencySiren();
                         hasTriggeredAutoWarning = false;
                         const overlay = document.getElementById('emergencyWarningModalOverlay');
                         if (overlay) overlay.classList.remove('active');
                         showMapToast('🌐 Connecting to Live Open-Meteo Satellite Feed for Dhemaji...');
                     } else if (scenarioName === 'normal') {
+                        stopMonsoonAudio();
                         // Immediately silence siren if transitioning to normal
                         muteEmergencySiren();
                         hasTriggeredAutoWarning = false;
@@ -2712,10 +2643,11 @@
                         hasTriggeredAutoWarning = false;
                         const overlay = document.getElementById('emergencyWarningModalOverlay');
                         if (overlay) overlay.classList.remove('active');
-                        // Authentic environmental thunderbolt sound for Monsoon Watch (No alarm/siren)
+                        // Authentic environmental thunder audio for Monsoon Watch (No alarm/siren)
                         playThunderboltSound();
                         showMapToast(`⛈️ Monsoon Watch: Rolling thunder & elevated precipitation`);
                     } else if (scenarioName === 'emergency') {
+                        stopMonsoonAudio();
                         hasTriggeredAutoWarning = false; // allow auto-trigger on switch
                         showMapToast('🚨 Simulation: Critical Embankment Breach Activated!');
                     }
