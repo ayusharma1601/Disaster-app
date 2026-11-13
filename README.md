@@ -36,12 +36,17 @@ The platform integrates real-time meteorological observations with edge-computed
   - Digitized flood inundation hazard polygons (Subansiri Corridor, Gai River Flash Flood Spillway, Jiadhal Fan).
   - High-visibility vector tactical pins with radar pulse animation, draggable repositioning, and double-click / context-menu instant deletion.
 
-### 3. Incident Management & Zero-PII Victim Privacy
+### 3. Incident Management, AI Triage & Zero-PII Victim Privacy
+- **AI Triage & Operational Assessment:** On-device NLP semantic model (`services/ai_triage.py`) dynamically analyzes emergency SOS descriptions, assigning a continuous Threat Score (0.00 to 1.00), calibrated urgency, and recommending targeted resource dispatch (Rescue Boats, Medical Units, Relief Camps, SDRF Squads).
 - **Statutory Workflow State Machine:** Incidents enter strictly as `UNVERIFIED` and require verified operator authentication to progress (`UNDER REVIEW` $\to$ `VERIFIED` $\to$ `ASSIGNED` $\to$ `IN PROGRESS` $\to$ `RESOLVED` $\to$ `CLOSED`).
 - **Privacy Sanitization:** Cryptographically and programmatically scrubs confidential reporter contact details, phone numbers, and identifying data from public endpoints.
 - **Immutable Audit Trail:** System actions, resource allocations, and operator transitions are recorded in an append-only audit ledger with SHA-256 integrity hash verification.
 
-### 4. Zero-Internet / Offline-First Resilience
+### 4. Machine Learning Hydrological Flood Crest Predictor
+- **Dynamic Telemetry & Forecast Ingestion:** Aggregates live station rainfall and river gauges with IMD 48-hour projected precipitation forecasts.
+- **Calibrated Statistical Modeling:** Implements continuous logistic regression against multi-year ASDMA flood analogues (2020–2024 Dhemaji records), providing dynamic crest lead-time forecasting, inundation surge margins, and early warning advisories.
+
+### 5. Zero-Internet / Offline-First Resilience
 - **Decoupled Architecture:** Runs entirely on-device or on a local battery-powered node (e.g., Raspberry Pi or local field laptop) binding to `0.0.0.0:8000` over local Wi-Fi.
 - **Browser-Native Audio Synthesis:** All siren warbles and thunderbolt sounds are synthesized on the fly via the browser Web Audio API—requiring zero external audio downloads or CDN assets.
 - **P2P Mesh Integration:** In-browser BitChat mesh protocol using BroadcastChannel, localStorage synchronization, and Web Bluetooth (BLE) peripheral pairing for message relay during complete ISP blackouts.
@@ -51,7 +56,8 @@ The platform integrates real-time meteorological observations with edge-computed
 ## Technical Stack
 
 - **Backend:** Python 3.10+, FastAPI (ASGI architecture on Uvicorn)
-- **Database:** SQLite via SQLAlchemy ORM (thread-isolated session dependencies)
+- **AI & Predictive Modeling:** On-device NLP Bag-of-Words & Semantic Triage Classifier, Calibrated Hydrological Logistic Flood Regressor
+- **Database:** SQLite via SQLAlchemy ORM (thread-isolated session dependencies, serverless /tmp auto-routing)
 - **Frontend:** Vanilla JavaScript (ES6+), HTML5, CSS3 (Light & True-Black Dark themes)
 - **3D Graphics & Maps:** Three.js, OrbitControls, Leaflet.js
 - **Audio Engine:** HTML5 Web Audio API (procedural audio synthesis)
@@ -69,12 +75,13 @@ disaster-app/
 │       ├── dhemaji_telemetry.csv       # Sample hydrological observation dataset
 │       └── imd_weather_forecast.json   # Sample IMD 5-day weather bulletin
 ├── services/
-│   ├── auth.py                         # JWT token authentication & bcrypt password hashing
+│   ├── ai_triage.py                    # NLP triage classifier & emergency resource dispatch model
+│   ├── auth.py                         # JWT token authentication & password hashing
 │   ├── data_validation.py              # Boundary & schema validation
 │   ├── notification_service.py         # Resilient alert dispatch service
 │   ├── risk_engine.py                  # Core hydrological risk scoring algorithms
 │   ├── security.py                     # Rate limiting & security middleware
-│   └── trend_predictor.py              # Telemetry trend modeling
+│   └── trend_predictor.py              # Dynamic hydrological flood prediction engine
 ├── static/
 │   ├── data/                           # TopoJSON geography models
 │   ├── icons/                          # PWA application icons
