@@ -256,6 +256,21 @@ ALL TESTS COMPLETED: 6/6 SUITES PASSED (100% PASS RATE)
 
 ---
 
+## Production Readiness & Security Hardening Roadmap
+
+While this repository is architected as an **offline-first tactical prototype and evaluation instrument**, taking this system into a multi-node, public cloud or high-availability government production deployment involves following standard enterprise security and infrastructure hardening practices:
+
+| Architectural Domain | Prototype Implementation | Production Hardening Blueprint |
+|---|---|---|
+| **Identity & Access Management (IAM)** | Default pre-seeded admin/responder credentials (`admin123`, `operator123`) for seamless zero-setup evaluation. | Enforce mandatory environment variables or secrets manager injection (`DEFAULT_ADMIN_PASSWORD`, `DEFAULT_OPERATOR_PASSWORD`). Disallow hardcoded fallbacks and enforce strong password policies, MFA (FIDO2/TOTP), and SSO/OAuth2 (e.g. e-Gov Auth / SAML). |
+| **Fail-Closed Secret Management** | Fallback secret key in local dev mode (`DISASTER_APP_SECRET_KEY`). | Enforce **fail-closed** startup: abort the boot process if `ENVIRONMENT=production` and `DISASTER_APP_SECRET_KEY` is unset or matches the default development secret. Store production secrets in AWS Secrets Manager, HashiCorp Vault, or Google Secret Manager. |
+| **Distributed Session State** | In-memory token registry (`ACTIVE_TOKENS`) for single-laptop field emergency hubs. | Migrate from single-process memory to stateless cryptographically-signed JWTs with short time-to-live (TTL) and DB-backed refresh tokens, or use a distributed Redis cluster to support horizontal scaling across multi-worker uvicorn nodes behind a reverse proxy/load balancer. |
+| **Content Security Policy (CSP)** | Permissive CSP with `'unsafe-inline'` and `'unsafe-eval'` to allow dynamic Leaflet rendering, local maps, and flexible prototyping. | Enforce strict nonced CSP (`script-src 'nonce-{RANDOM}' 'strict-dynamic'`), eliminate `'unsafe-eval'`, and lock down `connect-src` and `img-src` exclusively to trusted GIS and telemetry endpoints. |
+| **Database Migrations & Hygiene** | Automatic schema creation on startup via `Base.metadata.create_all(bind=engine)`. | Replace automatic startup schema creation with structured **Alembic** migration scripts (`alembic upgrade head`) to support deterministic schema evolution, zero-downtime rolling upgrades, and auditability. |
+| **Data Ingestion & Integrity** | Local CSV and mock JSON feeds alongside live Open-Meteo satellite weather API. | Integrate cryptographic signature verification (HMAC/mTLS) on remote IoT sensor feeds (CWC river water level radars and IMD AWS stations) to prevent telemetry tampering or spoofed flood alerts. |
+
+---
+
 ## License
 
 This project is licensed under the MIT License.
