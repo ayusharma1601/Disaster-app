@@ -205,17 +205,15 @@ start.bat
 
 ---
 
-## How to Access the Website Locally
+## Application Views & Navigation
 
-Once the server is running (`Uvicorn running on http://0.0.0.0:8000`), open your web browser to any of the following URLs:
+Once the server is running on port 8000, you can navigate through the platform interface:
 
-| View / Tool | Local URL | Description |
-|---|---|---|
-| **Main Tactical Dashboard** | [http://localhost:8000](http://localhost:8000) or [http://127.0.0.1:8000](http://127.0.0.1:8000) | Full 3D WebGL Earth globe, 2D tactical flood map, live telemetry, and community incident feed. |
-| **Mobile / LAN Access** | `http://<YOUR_LOCAL_IP>:8000` | Access the platform from smartphones, tablets, or other laptops on the same Wi-Fi network (find your IP via `ipconfig` on Windows or `ifconfig` on Linux/Mac). |
-| **Interactive API Documentation** | [http://localhost:8000/docs](http://localhost:8000/docs) | Interactive Swagger UI to inspect and test all REST API endpoints. |
-| **Alternative API Docs** | [http://localhost:8000/redoc](http://localhost:8000/redoc) | Clean ReDoc API documentation format. |
-| **Terms & Safety Disclosures** | [http://localhost:8000/terms](http://localhost:8000/terms) | Statutory compliance disclosures and offline safety guidelines. |
+- **Main Tactical Dashboard (`/`):** Full 3D WebGL Earth globe, 2D tactical flood map, live telemetry, and community incident feed.
+- **Mobile / Local Network Access (`http://<YOUR_LOCAL_IP>:8000`):** Responsive access from smartphones, tablets, or field laptops on the same local Wi-Fi or mesh subnet.
+- **Interactive API Documentation (`/docs`):** Swagger UI to inspect and test all REST API endpoints.
+- **Alternative API Reference (`/redoc`):** ReDoc API specification view.
+- **Terms & Safety Disclosures (`/terms`):** Statutory compliance disclosures and offline safety guidelines.
 
 ### Default Operator Credentials (For Triage & Resource Allocation)
 To test responder workflows (assigning boats, changing incident statuses, reviewing audit logs), click **Operator Login** in the top navigation bar:
