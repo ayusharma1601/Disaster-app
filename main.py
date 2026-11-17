@@ -319,17 +319,53 @@ def get_scenario_observations(scenario_name: str):
             {"station_name": "Jiabhoroli River Outpost", "station_type": "River Gauge", "district": "Dhemaji", "latitude": 27.4500, "longitude": 94.5100, "variable": "water_level", "value": 87.20, "unit": "m", "observed_at": ts, "river_name": "Jiabhoroli / Local Tributary", "warning_level": 90.50, "danger_level": 91.50}
         ]
 
+# In-memory weather cache: (timestamp, data_dict)
+_WEATHER_CACHE = {"timestamp": 0.0, "data": None}
+
 def fetch_live_dhemaji_weather():
-    """Fetch live meteorological observations directly from Open-Meteo for Dhemaji (27.48°N, 94.58°E)."""
+    """
+    Fetch live meteorological observations directly from Open-Meteo for Dhemaji (27.48°N, 94.58°E).
+    Caches results for 10 minutes (600s) to prevent hammering external APIs.
+    Queries both current conditions and past 24h hourly precipitation for accurate rainfall accumulation.
+    """
+    import time
+    now = time.time()
+    if _WEATHER_CACHE["data"] and (now - _WEATHER_CACHE["timestamp"] < 600):
+        return _WEATHER_CACHE["data"]
+
     try:
-        url = "https://api.open-meteo.com/v1/forecast?latitude=27.48&longitude=94.58&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,wind_speed_10m&timezone=Asia%2FKolkata"
+        url = (
+            "https://api.open-meteo.com/v1/forecast?latitude=27.48&longitude=94.58"
+            "&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,wind_speed_10m"
+            "&hourly=precipitation&past_days=1&forecast_days=1&timezone=Asia%2FKolkata"
+        )
         req = urllib.request.Request(url, headers={"User-Agent": "DisasterIntelligencePlatform/2.0"})
         with urllib.request.urlopen(req, timeout=4) as resp:
             data = json.loads(resp.read().decode("utf-8"))
-            return data.get("current", {})
+            current = data.get("current", {})
+            
+            # Calculate actual 24-hour accumulated rainfall from hourly records
+            hourly_precip = data.get("hourly", {}).get("precipitation", [])
+            if hourly_precip and len(hourly_precip) >= 24:
+                # Sum the last 24 hours of precipitation
+                rain_24h = round(sum(float(p or 0.0) for p in hourly_precip[-24:]), 1)
+            else:
+                # Fallback to current rate * 24 if hourly array unavailable
+                rain_24h = round(float(current.get("precipitation", 0.0)) * 4.0, 1)
+
+            result = {
+                "temperature_2m": current.get("temperature_2m", 28.0),
+                "relative_humidity_2m": current.get("relative_humidity_2m", 60),
+                "wind_speed_10m": current.get("wind_speed_10m", 3.0),
+                "precipitation_rate": float(current.get("precipitation", 0.0)),
+                "rainfall_24h": rain_24h
+            }
+            _WEATHER_CACHE["timestamp"] = now
+            _WEATHER_CACHE["data"] = result
+            return result
     except Exception as e:
         print(f"[LIVE INGESTION] Live Open-Meteo weather fetch offline/failed: {e}")
-        return None
+        return _WEATHER_CACHE["data"]
 
 class ScenarioRequest(BaseModel):
     scenario: str  # "live", "normal", "watch", "emergency"
@@ -361,25 +397,27 @@ def get_current_telemetry():
         live_data = fetch_live_dhemaji_weather()
         ts = _get_current_timestamp_str()
         if live_data:
-            live_precip = float(live_data.get("precipitation", 0.0))
+            live_precip = float(live_data.get("precipitation_rate", 0.0))
+            rain_24h = float(live_data.get("rainfall_24h", live_precip))
             live_temp = float(live_data.get("temperature_2m", 28.0))
             live_humid = float(live_data.get("relative_humidity_2m", 60))
             live_wind = float(live_data.get("wind_speed_10m", 3.0))
 
             live_meta = {
-                "source": "Open-Meteo WMO Live Telemetry (Real-Time)",
+                "source": "Open-Meteo WMO Live Telemetry (Cached 10m)",
                 "temperature_c": live_temp,
                 "humidity_pct": live_humid,
                 "wind_kmh": live_wind,
-                "live_rain_mm": live_precip
+                "live_rain_rate_mm": live_precip,
+                "rainfall_24h_mm": rain_24h
             }
 
             # Build telemetry observations with live weather combined with baseline gauges (explicitly flagged)
             observations = [
-                {"station_name": "Dhemaji District HQ (Civil Station)", "station_type": "Rainfall (Live Met)", "district": "Dhemaji", "latitude": 27.4833, "longitude": 94.5833, "variable": "rainfall_24h", "value": live_precip, "unit": "mm", "observed_at": ts, "river_name": None, "warning_level": None, "danger_level": None, "source_type": "LIVE_GROUND_TRUTH"},
-                {"station_name": "Jonai Sub-Division Station", "station_type": "Rainfall (Simulated Multiplier)", "district": "Dhemaji", "latitude": 27.8333, "longitude": 95.1667, "variable": "rainfall_24h", "value": round(live_precip * 0.9, 1), "unit": "mm", "observed_at": ts, "river_name": None, "warning_level": None, "danger_level": None, "source_type": "SIMULATED"},
-                {"station_name": "Silapathar Revenue Circle", "station_type": "Rainfall (Simulated Multiplier)", "district": "Dhemaji", "latitude": 27.5950, "longitude": 94.7250, "variable": "rainfall_24h", "value": round(live_precip * 1.1, 1), "unit": "mm", "observed_at": ts, "river_name": None, "warning_level": None, "danger_level": None, "source_type": "SIMULATED"},
-                {"station_name": "Gogamukh Block Office", "station_type": "Rainfall (Simulated Multiplier)", "district": "Dhemaji", "latitude": 27.4200, "longitude": 94.4000, "variable": "rainfall_24h", "value": round(live_precip * 0.8, 1), "unit": "mm", "observed_at": ts, "river_name": None, "warning_level": None, "danger_level": None, "source_type": "SIMULATED"},
+                {"station_name": "Dhemaji District HQ (Civil Station)", "station_type": "Rainfall (Live Met 24h)", "district": "Dhemaji", "latitude": 27.4833, "longitude": 94.5833, "variable": "rainfall_24h", "value": rain_24h, "unit": "mm", "observed_at": ts, "river_name": None, "warning_level": None, "danger_level": None, "source_type": "LIVE_GROUND_TRUTH"},
+                {"station_name": "Jonai Sub-Division Station", "station_type": "Rainfall (Simulated Multiplier)", "district": "Dhemaji", "latitude": 27.8333, "longitude": 95.1667, "variable": "rainfall_24h", "value": round(rain_24h * 0.9, 1), "unit": "mm", "observed_at": ts, "river_name": None, "warning_level": None, "danger_level": None, "source_type": "SIMULATED"},
+                {"station_name": "Silapathar Revenue Circle", "station_type": "Rainfall (Simulated Multiplier)", "district": "Dhemaji", "latitude": 27.5950, "longitude": 94.7250, "variable": "rainfall_24h", "value": round(rain_24h * 1.1, 1), "unit": "mm", "observed_at": ts, "river_name": None, "warning_level": None, "danger_level": None, "source_type": "SIMULATED"},
+                {"station_name": "Gogamukh Block Office", "station_type": "Rainfall (Simulated Multiplier)", "district": "Dhemaji", "latitude": 27.4200, "longitude": 94.4000, "variable": "rainfall_24h", "value": round(rain_24h * 0.8, 1), "unit": "mm", "observed_at": ts, "river_name": None, "warning_level": None, "danger_level": None, "source_type": "SIMULATED"},
                 {"station_name": "Jiabhalali-Subansiri Confluence", "station_type": "River Gauge (Sample Baseline)", "district": "Dhemaji", "latitude": 27.3500, "longitude": 94.2500, "variable": "water_level", "value": 81.40, "unit": "m", "observed_at": ts, "river_name": "Subansiri River", "warning_level": 85.00, "danger_level": 86.00, "source_type": "SAMPLE_BASELINE"},
                 {"station_name": "Gai River Gauge Site", "station_type": "River Gauge (Sample Baseline)", "district": "Dhemaji", "latitude": 27.5200, "longitude": 94.6200, "variable": "water_level", "value": 98.60, "unit": "m", "observed_at": ts, "river_name": "Gai River", "warning_level": 102.50, "danger_level": 103.50, "source_type": "SAMPLE_BASELINE"},
                 {"station_name": "Jiabhoroli River Outpost", "station_type": "River Gauge (Sample Baseline)", "district": "Dhemaji", "latitude": 27.4500, "longitude": 94.5100, "variable": "water_level", "value": 87.20, "unit": "m", "observed_at": ts, "river_name": "Jiabhoroli / Local Tributary", "warning_level": 90.50, "danger_level": 91.50, "source_type": "SAMPLE_BASELINE"}
@@ -727,8 +765,9 @@ def get_trend_prediction():
 
     current_rainfall = 0.0
     rainfall_count = 0
-    max_water_level = 85.50
-    danger_mark = 86.00
+    worst_water_level = 85.50
+    worst_danger_mark = 86.00
+    worst_margin = -999.0
 
     for obs in observations:
         if obs.get("variable") == "rainfall_24h" and obs.get("value") is not None:
@@ -736,10 +775,13 @@ def get_trend_prediction():
             rainfall_count += 1
         elif obs.get("variable") == "water_level" and obs.get("value") is not None:
             lvl = float(obs["value"])
-            if lvl > max_water_level:
-                max_water_level = lvl
-            if obs.get("danger_level"):
-                danger_mark = float(obs["danger_level"])
+            # Evaluate margin against this specific gauge's danger level to avoid mixing river baselines
+            d_mark = float(obs.get("danger_level") or 86.00)
+            margin = lvl - d_mark
+            if margin > worst_margin:
+                worst_margin = margin
+                worst_water_level = lvl
+                worst_danger_mark = d_mark
 
     avg_rainfall_24h = round(current_rainfall / max(1, rainfall_count), 1) if rainfall_count > 0 else 45.0
 
@@ -759,8 +801,8 @@ def get_trend_prediction():
     return TrendPredictor.predict_flood_from_rainfall_trends(
         current_rainfall_24h=avg_rainfall_24h,
         projected_rain_48h=projected_rain_48h,
-        current_water_level=max_water_level,
-        danger_level=danger_mark
+        current_water_level=worst_water_level,
+        danger_level=worst_danger_mark
     )
 
 # ── Audit Logging API (Phase 6 Deliverable) ───────────────────

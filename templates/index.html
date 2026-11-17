@@ -1140,6 +1140,9 @@
                 <div id="risk-details" style="font-size: 0.82rem; line-height: 1.5; color: var(--text-muted);">
                     Evaluating live sensor telemetry...
                 </div>
+                <div id="telemetryFreshnessIndicator" style="margin-top: 0.45rem; font-size: 0.72rem; color: var(--text-muted); font-weight: 600;">
+                    ⏱️ Telemetry status: Initializing...
+                </div>
             </div>
 
             <div class="section">
@@ -2015,11 +2018,16 @@
             const dhemajiCoords = [27.4833, 94.5833];
             leafletMapInstance = L.map('leafletMap').setView(dhemajiCoords, 11);
 
-            // Clean OpenStreetMap tiles
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            // OpenStreetMap base map tiles (Requires internet unless locally cached by service worker)
+            const baseTileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 18,
-                attribution: '&copy; OpenStreetMap contributors | ASDMA Hydrology & Disaster Management'
+                attribution: '&copy; OpenStreetMap contributors | ASDMA Hydrology & Disaster Management (Requires Internet/Cache)'
             }).addTo(leafletMapInstance);
+
+            baseTileLayer.on('tileerror', function() {
+                const mapNotice = document.getElementById('offlineMapNotice');
+                if (mapNotice) mapNotice.style.display = 'block';
+            });
 
             // Layer Groups for Tactical Toggles
             const floodZonesGroup = L.layerGroup().addTo(leafletMapInstance);
@@ -2743,6 +2751,19 @@
                 data.risk.reasons.forEach(r => reasonsHtml += `<li>${r}</li>`);
                 reasonsHtml += `</ul>`;
                 detailsContainer.innerHTML = reasonsHtml;
+
+                // Update Telemetry Freshness Indicator
+                const freshnessEl = document.getElementById('telemetryFreshnessIndicator');
+                if (freshnessEl) {
+                    if (data.risk.category === 'STALE DATA / DATA UNAVAILABLE') {
+                        freshnessEl.style.color = '#f87171';
+                        freshnessEl.innerHTML = '⚠️ <strong>Offline Sensor Alert:</strong> Observations exceed 12h freshness window.';
+                    } else {
+                        const nowStr = new Date().toLocaleTimeString();
+                        freshnessEl.style.color = '#38bdf8';
+                        freshnessEl.innerHTML = `🟢 <strong>Telemetry Fresh:</strong> Synchronized at ${nowStr} (Auto-syncs every 5s)`;
+                    }
+                }
 
                 const listContainer = document.getElementById('telemetry-list');
                 listContainer.innerHTML = '';

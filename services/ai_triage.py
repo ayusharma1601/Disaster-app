@@ -32,12 +32,17 @@ class IncidentTriageAI:
         "waterlogging": 0.65, "flooded": 0.70, "inundated": 0.72, "cutoff": 0.75,
         "cut off": 0.75, "road blocked": 0.65, "culvert choked": 0.68, "erosion": 0.70,
         "embankment": 0.70, "danger level": 0.75, "no drinking water": 0.70,
-        "food shortage": 0.68, "isolated": 0.72, "heavy rain": 0.60
+        "food shortage": 0.68, "isolated": 0.72, "heavy rain": 0.60,
+        "unwell": 0.75, "sick": 0.75, "fever": 0.70, "patient": 0.75, "stroke": 0.85,
+        "heart attack": 0.90, "oxygen": 0.85, "dialysis": 0.85, "pregnant": 0.80
     }
 
+    # Negation patterns to prevent false-positive critical alerts on safe conditions
+    NEGATION_WORDS = {"not", "no", "never", "without", "safe", "cleared", "fine", "okay", "unharmed"}
+
     RESOURCE_MAPPING = [
+        (["injured", "casualty", "medical", "fever", "sick", "unwell", "patient", "pregnant", "bleeding", "trauma", "doctor", "oxygen", "dialysis"], "Medical Unit"),
         (["boat", "marooned", "stranded", "trapped", "swept", "drowning", "roof", "rooftop", "river", "breach"], "Rescue Boat"),
-        (["injured", "casualty", "medical", "fever", "sick", "pregnant", "bleeding", "trauma", "doctor"], "Medical Unit"),
         (["shelter", "homeless", "evacuation", "evacuate", "displaced", "relief camp", "houses flooded"], "Relief Camp"),
         (["drinking water", "water tanker", "dehydration", "thirst", "potable"], "Water Tanker"),
         (["embankment", "sandbags", "collapse", "siltation", "spillway", "culvert"], "SDRF Squad")
@@ -48,29 +53,49 @@ class IncidentTriageAI:
         return re.sub(r'[^a-zA-Z0-9\s]', ' ', text.lower())
 
     @classmethod
+    def _is_negated(cls, kw: str, text: str) -> bool:
+        """
+        Check if a keyword is preceded by negation or safe terms within 3 words
+        (e.g., 'not stranded', 'everyone is safe', 'no breach', 'without injury').
+        """
+        pattern = rf"\b(not|no|never|without|safe|neither|cleared|fine|okay)\b(?:\s+\w+){{0,3}}\s+\b{re.escape(kw)}\b"
+        return bool(re.search(pattern, text))
+
+    @classmethod
     def triage_incident(cls, category: str, description: str, location_text: Optional[str] = None) -> Dict:
         """
-        Analyzes incident text using NLP bag-of-words & semantic scoring to assign severity,
+        Analyzes incident text using rule-based keyword triage and negation-aware scoring to assign severity,
         triage urgency, resource recommendation, and operational guidance.
         """
         combined_text = cls._clean_text(f"{category} {description} {location_text or ''}")
         words = set(combined_text.split())
 
-        # 1. Calculate Threat Index
+        # 1. Calculate Threat Index with Negation Awareness
         severity_hits = []
+        negated_hits = []
         max_severity = 0.35  # baseline low/medium
         
         for kw, score in cls.CRITICAL_KEYWORDS.items():
             if kw in combined_text:
-                severity_hits.append(kw)
-                if score > max_severity:
-                    max_severity = score
+                if cls._is_negated(kw, combined_text):
+                    negated_hits.append(kw)
+                else:
+                    severity_hits.append(kw)
+                    if score > max_severity:
+                        max_severity = score
 
         for kw, score in cls.HIGH_KEYWORDS.items():
             if kw in combined_text:
-                severity_hits.append(kw)
-                if score > max_severity:
-                    max_severity = score
+                if cls._is_negated(kw, combined_text):
+                    negated_hits.append(kw)
+                else:
+                    severity_hits.append(kw)
+                    if score > max_severity:
+                        max_severity = score
+
+        # If all risk keywords were explicitly negated, lower baseline to safe LOW
+        if not severity_hits and negated_hits:
+            max_severity = 0.20
 
         # Adjust score by word density
         density_bonus = min(0.15, len(severity_hits) * 0.04)
@@ -89,18 +114,24 @@ class IncidentTriageAI:
         # 3. Recommend Matching Resource
         recommended_resource = "SDRF Squad"  # default general response
         for triggers, res_name in cls.RESOURCE_MAPPING:
-            if any(t in combined_text for t in triggers):
+            # Check triggers that are not negated
+            active_triggers = [t for t in triggers if t in combined_text and not cls._is_negated(t, combined_text)]
+            if active_triggers:
                 recommended_resource = res_name
                 break
 
         # 4. Generate Operational Triage Summary
         rationale = []
         if severity_hits:
-            rationale.append(f"Identified high-impact indicators: {', '.join(severity_hits[:4])}.")
+            rationale.append(f"Identified priority indicators: {', '.join(severity_hits[:4])}.")
+        if negated_hits:
+            rationale.append(f"Detected safe/negated context for: {', '.join(negated_hits[:3])}.")
         if "breach" in words or "breached" in words:
-            rationale.append("Structural risk detected: Immediate embankment alert dispatch required.")
+            if not cls._is_negated("breach", combined_text) and not cls._is_negated("breached", combined_text):
+                rationale.append("Structural risk detected: Immediate embankment alert dispatch required.")
         if "stranded" in words or "marooned" in words:
-            rationale.append("Human life at imminent risk: Prioritize watercraft search & rescue.")
+            if not cls._is_negated("stranded", combined_text) and not cls._is_negated("marooned", combined_text):
+                rationale.append("Human life at imminent risk: Prioritize watercraft search & rescue.")
 
         if not rationale:
             rationale.append("Standard priority report; routine field verification recommended.")
@@ -110,6 +141,7 @@ class IncidentTriageAI:
             "ai_suggested_urgency": urgency_tier,
             "ai_recommended_resource": recommended_resource,
             "detected_risk_indicators": severity_hits,
+            "negated_risk_indicators": negated_hits,
             "triage_rationale": " ".join(rationale),
-            "model_version": "Disaster-Triage-NLP-v1 (Embedded Local-First)"
+            "model_version": "Rule-Based Keyword Triage (Offline Explainable)"
         }

@@ -144,7 +144,7 @@ disaster-app/
 ## Getting Started
 
 ### Prerequisites
-- Python 3.10 or higher
+- Python 3.11 or 3.12 (Recommended; compatible with pinned dependencies)
 - Git
 
 ### Installation & Quick Start
@@ -155,7 +155,7 @@ Run the automated launcher script from PowerShell or Command Prompt:
 cd disaster-app
 start.bat
 ```
-*(This automatically creates the virtual environment, installs dependencies, loads baseline telemetry, and opens the local server).*
+*(This cleans any occupied port 8000 processes, starts the local server with full LAN capability, and opens the tactical dashboard in your default browser).*
 
 ---
 
@@ -193,15 +193,11 @@ start.bat
    pip install -r requirements.txt
    ```
 
-5. **Seed demo hydrological telemetry & database:**
-   ```bash
-   python load_demo.py
-   ```
-
-6. **Start the local ASGI web server:**
+5. **Start the local ASGI web server:**
    ```bash
    python -m uvicorn main:app --host 0.0.0.0 --port 8000
    ```
+   *(Initial database schema, emergency responders, and baseline Dhemaji telemetry seed automatically on boot).*
 
 ---
 

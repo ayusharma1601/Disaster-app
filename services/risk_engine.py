@@ -46,8 +46,8 @@ class RiskEngine:
             if var == "rainfall_24h" and val is not None:
                 valid_rainfall_values.append(val)
             elif var == "water_level" and val is not None:
-                warning_level = obs.get("warning_level", 85.0)
-                danger_level = obs.get("danger_level", 86.0)
+                warning_level = obs.get("warning_level") or 85.0
+                danger_level = obs.get("danger_level") or 86.0
                 if val >= danger_level:
                     gauge_scores.append(5.0)
                     reasons.append(f"River gauge at {obs.get('station_name', 'Station')} reached {val}m (at/above Danger Level {danger_level}m)")
